@@ -2,14 +2,20 @@ import numpy as np
 
 class BlackBox(object):
     def __init__(self, func, shape=None, perm=None, array_based=False):
-        if type(func) == np.ndarray:
+        if type(func) == BlackBox:
+            # copy constructor
+            self.func = func.func
+            self.shape = func.shape
+            self.perm = None if func.perm is None else func.perm.copy()
+            self.array_based = func.array_based
+        elif type(func) == np.ndarray:
             BlackBox.__init__(self,
                               lambda indices: func[indices],
                               shape=func.shape, perm=perm, array_based=True)
         else:
             self.func = func
             self.shape = shape
-            self.perm = perm if perm is not None else None
+            self.perm = perm.copy() if perm is not None else None
             self.array_based = array_based
 
     def normalize(self, index, i):
@@ -24,10 +30,17 @@ class BlackBox(object):
         return np.vstack([np.repeat(indices[0], indices[1].size),
                    np.tile(indices[1], indices[0].size)]).T
 
+    def permutate(self, perm):
+        if self.perm is None:
+            self.perm = perm.copy()
+        else:
+            self.perm = perm[self.perm].copy()
+
     def full_matrix(self):
         return self.__getitem__((slice(None, None, None), slice(None, None, None)))
 
     def __getitem__(self, indices):
+        # TODO if func is ndarray, do we need to copy it values?
         if self.array_based:
             return self.func(indices)
         else:
