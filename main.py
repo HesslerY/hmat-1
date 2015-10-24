@@ -25,18 +25,13 @@ def gen_mat(N):
 
 
 if __name__ == "__main__":
+    # create fbox and hmat from our function
     N = 16
     fbox = BlackBox(gen_func(N), shape=(N**2, N**2))
     hm = hmat(fbox, r=20, leaf_side=16)
 
-    #a = gen_mat(N)
-    perm = np.random.permutation(N**2)
-    #conjugate(a, perm)
-    #fbox.permutate(perm)
-    orig = hm.mat[:, :]
-
-    #print('approximation accuracy: {}'.format(rel_error(orig, a)))
+    orig = gen_mat(N)
+    # get original matrix
     approx = hm.full_matrix()
-    hm.check(orig)
     print('approximation accuracy: {}'.format(rel_error(orig, approx)))
     print hm.count_params(), int(np.prod(orig.shape))

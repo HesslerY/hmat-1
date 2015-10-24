@@ -116,9 +116,9 @@ class hmat(LinearOperator):
         N = int(np.sqrt(self.mat.shape[0]))
 
         self.pattern = distance_matrix(N, format='coo')
-        self.pattern = self.pattern.tocsr()
         perm = hilbert_traverse(N)
         conjugate_sparse(self.pattern, perm)
+        self.pattern = self.pattern.tocsr()
         self.mat.permutate(perm)
         self.root = hmat_node(self, tuple(zip((0, 0), self.mat.shape)))
         return
@@ -126,6 +126,7 @@ class hmat(LinearOperator):
     def full_matrix(self):
         mat = np.zeros(self.mat.shape)
         self.root.full_part(mat)
+        conjugate(mat, self.mat.perm.argsort())
         return mat
 
     def _matvec(self, vec):
