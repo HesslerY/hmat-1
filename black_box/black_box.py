@@ -1,21 +1,23 @@
 import numpy as np
 
 class BlackBox(object):
-    def __init__(self, func, shape=None, perm=None, array_based=False):
+    def __init__(self, func, shape=None, perm=None, dtype=None, array_based=False):
         if type(func) == BlackBox:
             # copy constructor
             self.func = func.func
             self.shape = func.shape
             self.perm = None if func.perm is None else func.perm.copy()
             self.array_based = func.array_based
+            self.dtype = func.dtype
         elif type(func) == np.ndarray:
             BlackBox.__init__(self,
                               lambda indices: func[indices],
-                              shape=func.shape, perm=perm, array_based=True)
+                              shape=func.shape, perm=perm, dtype=func.dtype, array_based=True)
         else:
             self.func = func
             self.shape = shape
             self.perm = perm.copy() if perm is not None else None
+            self.dtype = dtype if dtype is not None else np.float
             self.array_based = array_based
 
     def normalize(self, index, i):

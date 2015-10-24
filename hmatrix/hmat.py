@@ -8,8 +8,10 @@ from matrix_lowrank import MatrixLowRank
 from utils.indices_utils import hilbert_traverse, break_ranges
 from utils.matrix_utils import conjugate, conjugate_sparse
 
+from scipy.sparse.linalg import LinearOperator
 
-class htree_node(object):
+
+class hmat_node(object):
     def __init__(self, tree, ranges):
         self.tree = tree
         self.ranges = ranges
@@ -31,10 +33,10 @@ class htree_node(object):
             # non-leaf node - continue recursion
             self.is_leaf = False
             ranges_nw, ranges_ne, ranges_sw, ranges_se = break_ranges(ranges)
-            self.nw = htree_node(tree, ranges_nw)
-            self.ne = htree_node(tree, ranges_ne)
-            self.sw = htree_node(tree, ranges_sw)
-            self.se = htree_node(tree, ranges_se)
+            self.nw = hmat_node(tree, ranges_nw)
+            self.ne = hmat_node(tree, ranges_ne)
+            self.sw = hmat_node(tree, ranges_sw)
+            self.se = hmat_node(tree, ranges_se)
         return
 
     def full_part(self, mat):
@@ -78,6 +80,18 @@ class htree_node(object):
             self.se.matvec_part(vec, result)
         return
 
+    def rmatvec_part(self, vec, result):
+        if (self.is_leaf and self.low_rank):
+            result[slice(*self.ranges[1])] += np.dot(self.v.conj().T, np.dot(self.u.conj().T, vec[slice(*self.ranges[0])]))
+        elif (self.is_leaf):
+            result[slice(*self.ranges[1])] += np.dot(self.mat.conj().T, vec[slice(*self.ranges[0])])
+        else:
+            self.nw.rmatvec_part(vec, result)
+            self.ne.rmatvec_part(vec, result)
+            self.sw.rmatvec_part(vec, result)
+            self.se.rmatvec_part(vec, result)
+        return
+
     def count_params_part(self):
         if (self.is_leaf and self.low_rank):
             return self.u.size + self.v.size
@@ -90,8 +104,10 @@ class htree_node(object):
                 self.se.count_params_part()
 
 
-class htree(object):
+class hmat(LinearOperator):
     def __init__(self, mat, r=10, leaf_side=16):
+        LinearOperator.__init__(self, dtype=mat.dtype, shape=mat.shape,
+                                matvec=self._matvec, rmatvec=self._rmatvec)
         self.mat = BlackBox(mat)
         self.r = r
         self.leaf_side = leaf_side
@@ -104,7 +120,7 @@ class htree(object):
         perm = hilbert_traverse(N)
         conjugate_sparse(self.pattern, perm)
         self.mat.permutate(perm)
-        self.root = htree_node(self, tuple(zip((0, 0), self.mat.shape)))
+        self.root = hmat_node(self, tuple(zip((0, 0), self.mat.shape)))
         return
 
     def full_matrix(self):
@@ -112,12 +128,19 @@ class htree(object):
         self.root.full_part(mat)
         return mat
 
-    def matvec(self, vec):
+    def _matvec(self, vec):
         assert len(vec.shape) == 1, 'vec must be vector'
         assert self.mat.shape[1] == vec.shape[0],\
             'mat of shape {shp}, cannot matvec on vec of shape {vshp}'.format(shp=self.mat.shape, vshp=vec.shape)
-        result = np.zeros_like(vec)
+        result = np.zeros(self.mat.shape[0])
         self.root.matvec_part(vec, result)
+
+    def _rmatvec(self, vec):
+        assert len(vec.shape) == 1, 'vec must be vector'
+        assert self.mat.shape[0] == vec.shape[0],\
+            'mat of shape {shp}, cannot matvec on vec of shape {vshp}'.format(shp=self.mat.shape, vshp=vec.shape)
+        result = np.zeros(self.mat.shape[1])
+        self.root.rmatvec_part(vec, result)
 
     def count_params(self):
         return self.root.count_params_part()
