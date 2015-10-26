@@ -40,16 +40,17 @@ if __name__ == "__main__":
     #print hm.count_params(), int(np.prod(orig.shape))
 
     x = np.ones((N**2))
-    xn = x[hm.mat.perm[np.arange(x.size)]]
 
-    res_list = []
-    res_list_n = []
+    rel_err_list_full = []
+    rel_err_list_hmat = []
 
-    xrn = scipy.sparse.linalg.cg(hm, hm.matvec(xn), x0=None, tol=1e-6, maxiter=50, callback=lambda xk: res_list_n.append(rel_error(xn, xk)))
-    xr = scipy.sparse.linalg.cg(fbox[:, :], np.dot(fbox[:, :], x), x0=None, tol=1e-6, maxiter=50, callback=lambda xk: res_list.append(rel_error(x, xk)))
+    x_full = scipy.sparse.linalg.cg(hm, hm.matvec(x), x0=None, tol=1e-6, maxiter=50,
+                                    callback=lambda xk: rel_err_list_full.append(rel_error(x, xk)))
+    x_hmat = scipy.sparse.linalg.cg(fbox[:, :], np.dot(fbox[:, :], x), x0=None, tol=1e-6, maxiter=50,
+                                    callback=lambda xk: rel_err_list_hmat.append(rel_error(x, xk)))
 
-    print(rel_error(np.dot(fbox[:, :], x), hm.matvec(xn)[hm.mat.perm.argsort()[np.arange(x.size)]]))
-    print(xr[1], xrn[1])
-    print(rel_error(x, xr[0]), rel_error(xn, xrn[0]))
-    for res, res_n in zip(res_list, res_list_n):
+    print(rel_error(np.dot(fbox[:, :], x), hm.matvec(x)))
+    print(x_full[1], x_hmat[1])
+    print(rel_error(x, x_full[0]), rel_error(x, x_hmat[0]))
+    for res, res_n in zip(rel_err_list_full, rel_err_list_hmat):
         print(res, res_n)

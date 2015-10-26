@@ -136,16 +136,24 @@ class hmat(LinearOperator):
         assert len(vec.shape) == 1, 'vec must be vector'
         assert self.mat.shape[1] == vec.shape[0],\
             'mat of shape {shp}, cannot matvec on vec of shape {vshp}'.format(shp=self.mat.shape, vshp=vec.shape)
+        if self.mat.perm is not None:
+            vec = vec[self.mat.perm]
         result = np.zeros(self.mat.shape[0])
         self.root.matvec_part(vec, result)
+        if self.mat.perm is not None:
+            result = result[self.mat.perm.argsort()]
         return result
 
     def _rmatvec(self, vec):
         assert len(vec.shape) == 1, 'vec must be vector'
         assert self.mat.shape[0] == vec.shape[0],\
             'mat of shape {shp}, cannot matvec on vec of shape {vshp}'.format(shp=self.mat.shape, vshp=vec.shape)
+        if self.mat.perm is not None:
+            vec = vec[self.mat.perm]
         result = np.zeros(self.mat.shape[1])
         self.root.rmatvec_part(vec, result)
+        if self.mat.perm is not None:
+            result = result[self.mat.perm.argsort()]
         return result
 
     def count_params(self):
