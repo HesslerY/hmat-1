@@ -109,8 +109,8 @@ class hmat_node(object):
 class hmat(LinearOperator):
     def __init__(self, mat, r=10, leaf_side=16):
         LinearOperator.__init__(self, dtype=mat.dtype, shape=mat.shape,
-                                matvec=lambda v: self._matvec(v),
-                                rmatvec=lambda v: self._rmatvec(v))
+                                matvec=self._matvec,
+                                rmatvec=self._rmatvec)
         self.mat = BlackBox(mat)
         self.r = r
         self.leaf_side = leaf_side
@@ -138,6 +138,7 @@ class hmat(LinearOperator):
             'mat of shape {shp}, cannot matvec on vec of shape {vshp}'.format(shp=self.mat.shape, vshp=vec.shape)
         result = np.zeros(self.mat.shape[0])
         self.root.matvec_part(vec, result)
+        return result
 
     def _rmatvec(self, vec):
         assert len(vec.shape) == 1, 'vec must be vector'
@@ -145,6 +146,7 @@ class hmat(LinearOperator):
             'mat of shape {shp}, cannot matvec on vec of shape {vshp}'.format(shp=self.mat.shape, vshp=vec.shape)
         result = np.zeros(self.mat.shape[1])
         self.root.rmatvec_part(vec, result)
+        return result
 
     def count_params(self):
         return self.root.count_params_part()
