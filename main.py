@@ -29,7 +29,6 @@ if __name__ == "__main__":
     N = 16
     fbox = BlackBox(gen_func(N), shape=(N**2, N**2))
     hm = hmat(fbox, r=20, leaf_side=16)
-
     orig = gen_mat(N)
     # get original matrix
     approx = hm.full_matrix()

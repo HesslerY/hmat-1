@@ -3,7 +3,7 @@ import numpy as np
 from black_box import BlackBox
 from utils import distance_matrix
 
-from utils.approx_utils import cross, low_rank_matrix_approx, rel_error
+from utils.approx_utils import cross, low_rank_matrix_approx, rel_error, csvd
 from matrix_lowrank import MatrixLowRank
 from utils.indices_utils import hilbert_traverse, break_ranges
 from utils.matrix_utils import conjugate, conjugate_sparse
@@ -26,7 +26,9 @@ class hmat_node(object):
         elif (tree.pattern[slice(*ranges[0]), slice(*ranges[1])].nnz == 0):
             # there is no close-relations between points - we start
             # low-rank approximation
-            self.u, self.v = low_rank_matrix_approx(tree.mat[slice(*ranges[0]), slice(*ranges[1])], r=self.tree.r)
+            #self.u, self.v = low_rank_matrix_approx(tree.mat[slice(*ranges[0]), slice(*ranges[1])], r=self.tree.r)
+            self.u, s, self.v = csvd(tree.mat[slice(*ranges[0]), slice(*ranges[1])], r=self.tree.r)
+            self.v = np.dot(np.diag(s), self.v)
             self.low_rank = True
             self.is_leaf = True
         else:
@@ -107,7 +109,8 @@ class hmat_node(object):
 class hmat(LinearOperator):
     def __init__(self, mat, r=10, leaf_side=16):
         LinearOperator.__init__(self, dtype=mat.dtype, shape=mat.shape,
-                                matvec=self._matvec, rmatvec=self._rmatvec)
+                                matvec=lambda v: self._matvec(v),
+                                rmatvec=lambda v: self._rmatvec(v))
         self.mat = BlackBox(mat)
         self.r = r
         self.leaf_side = leaf_side
