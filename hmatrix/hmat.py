@@ -19,17 +19,17 @@ class hmat_node(object):
 
         xlen, ylen = ranges[0][1] - ranges[0][0], ranges[1][1] - ranges[1][0]
 
-        if (xlen <= tree.leaf_side or ylen <= tree.leaf_side):
-            # leaf block~---~terminate partiotion
-            self.mat = tree.mat[slice(*ranges[0]), slice(*ranges[1])]
-            self.is_leaf = True
-        elif (tree.pattern[slice(*ranges[0]), slice(*ranges[1])].nnz == 0):
+        if (tree.pattern[slice(*ranges[0]), slice(*ranges[1])].nnz == 0):
             # there is no close-relations between points - we start
             # low-rank approximation
-            #self.u, self.v = low_rank_matrix_approx(tree.mat[slice(*ranges[0]), slice(*ranges[1])], r=self.tree.r)
-            self.u, s, self.v = csvd(tree.mat[slice(*ranges[0]), slice(*ranges[1])], r=self.tree.r)
-            self.v = np.dot(np.diag(s), self.v)
+            self.u, self.v = low_rank_matrix_approx(tree.mat[slice(*ranges[0]), slice(*ranges[1])], r=self.tree.r)
+            #self.u, s, self.v = csvd(tree.mat[slice(*ranges[0]), slice(*ranges[1])], r=self.tree.r)
+            #self.v = np.dot(np.diag(s), self.v)
             self.low_rank = True
+            self.is_leaf = True
+        elif (xlen <= tree.leaf_side or ylen <= tree.leaf_side):
+            # leaf block~---~terminate partiotion
+            self.mat = tree.mat[slice(*ranges[0]), slice(*ranges[1])]
             self.is_leaf = True
         else:
             # non-leaf node - continue recursion

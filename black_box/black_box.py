@@ -74,7 +74,7 @@ class BlackBox(object):
                         indy = self.perm[indy]
                     if (len(indx) == 1 and len(indy) == 1):
                         return self.func(np.vstack(self.indices_unveil((indx, indy)))).reshape((len(indx), len(indy)))[0]
-                    return self.func(np.vstack(self.indices_unveil((indx, indy)))).reshape((len(indx), len(indy)))
+                    return self.func(self.indices_unveil((indx, indy))).reshape((len(indx), len(indy)))
 
 
 def blackbox_test():

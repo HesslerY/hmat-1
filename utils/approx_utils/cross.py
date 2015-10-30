@@ -46,7 +46,6 @@ def low_rank_matrix_approx(A, r, delta=1e-8, maxiter=50):
     r = min(m, n, r)
     J = np.sort(np.random.choice(n, r, replace = False))
     approx_prev = MatrixLowRank((np.zeros((m, r)), np.zeros((r, n))), r)
-
     for i in range(maxiter):
         R = A[:, J]
         Q, T = np.linalg.qr(R)
@@ -64,5 +63,5 @@ def low_rank_matrix_approx(A, r, delta=1e-8, maxiter=50):
             approx_next.round(delta)
             return approx_next.u, approx_next.norm * approx_next.v
         approx_prev = approx_next
-    approx_next.round(delta)
-    return approx_next.u, approx_next.norm * approx_next.v
+    approx_prev.round(delta)
+    return approx_prev.u, approx_prev.norm * approx_next.v
